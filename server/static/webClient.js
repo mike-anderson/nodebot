@@ -1,20 +1,7 @@
 var socket = io();
 var canvas, ctx;
-var points = [[50,65]];
+var points = [];
 
- /*
- * Calculates the angle ABC (in radians) 
- *
- * A first point
- * C second point
- * B center point
- */
-function find_angle(A,B,C) {
-    var AB = Math.sqrt(Math.pow(B.x-A.x,2)+ Math.pow(B.y-A.y,2));    
-    var BC = Math.sqrt(Math.pow(B.x-C.x,2)+ Math.pow(B.y-C.y,2)); 
-    var AC = Math.sqrt(Math.pow(C.x-A.x,2)+ Math.pow(C.y-A.y,2));
-    return Math.acos((BC*BC+AB*AB-AC*AC)/(2*BC*AB));
-}
 
 /**
  * return a normalized cooridnate system regardless of view size
@@ -47,12 +34,13 @@ function drawLine(start, finish) {
 }
 
 function onMouseDown(event) {
-  console.log(event);
-  var coordinate = getCoordinate([event.clientX, event.clientY-40]);
-  points.push(coordinate);
-  var line = points.slice(-2);
-  drawLine(line[0],line[1]);
-  socket.emit('point',coordinate);
+  if (points.length >= 2) {
+    var coordinate = getCoordinate([event.clientX, event.clientY-40]);
+    points.push(coordinate);
+    var line = points.slice(-2);
+    drawLine(line[0],line[1]);
+    socket.emit('point',coordinate);
+  }
 }
 
 function onPoint(point) {

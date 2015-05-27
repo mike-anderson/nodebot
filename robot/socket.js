@@ -7,12 +7,12 @@ exports.init = function (control) {
 	socket.on('connect', function(){
 		control.queueUpCommand(0,'marker',['down']);
 		control.queueUpCommand(1,'marker',['up']);
+    socket.emit('IAMAROBOT');
 	});
 	socket.on('command', function(cmd){
 		control.queueUpCommand(cmd.id, cmd.command, cmd.args);	
 	});
 	socket.on('disconnect', function(){
-		control.queueUpCommand(0,'marker',['down']);
 		control.queueUpCommand(1,'marker',['up']);
 	});
 	control.on('finishedCommand', function (id) {
