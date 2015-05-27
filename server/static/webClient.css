@@ -1,0 +1,11 @@
+body {
+  color: #ecf0f1;
+  background-color: #2c3e50;
+}
+#drawingCanvas {
+  width: 100%;
+  background-color: #ecf0f1;
+}
+.row {
+	margin-bottom: 20;
+}
