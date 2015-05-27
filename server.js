@@ -3,7 +3,52 @@ var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-points = [];
+var points = [];
+var doodlebot;
+
+ /*
+ * Calculates the angle ABC (in radians) 
+ *
+ * A first point
+ * C second point
+ * B center point
+ */
+function findAngle(A,B,C) {
+    var AB = Math.sqrt(Math.pow(B.x-A.x,2)+ Math.pow(B.y-A.y,2));    
+    var BC = Math.sqrt(Math.pow(B.x-C.x,2)+ Math.pow(B.y-C.y,2)); 
+    var AC = Math.sqrt(Math.pow(C.x-A.x,2)+ Math.pow(C.y-A.y,2));
+    return Math.acos((BC*BC+AB*AB-AC*AC)/(2*BC*AB));
+}
+
+/**
+ * Calculates Euclidian distance
+ */
+function findDistance(A,B) {
+  return Math.sqrt( Math.pow((A[0]-B[0]), 2) + Math.pow((A[1]-B[1]), 2) );
+}
+
+function generatePathCommands(id, points) {
+  if (points.length === 3) {
+    var angle = findAngle(points[0],points[1],points[2]);
+    angle = angle / 3.1415 * 360; //degrees!
+    angle = angle - 180; //bearing!
+    if (angle > 2) {
+      doodlebot.emit('command',{
+        id: id,
+        command: 'turn',
+        args: [angle]
+      });
+    }
+    var distance = findDistance(points[1],points[2]);
+    if (distance > 0.05) {
+      doodlebot.emit('command',{
+        id: id,
+        command: 'go',
+        args:['fwd',distance*5000]
+      });
+    }
+  }
+}
 
 app.use('/static', express.static(__dirname + '/server/static'));
 app.get('/', function(req, res){
@@ -22,6 +67,26 @@ io.on('connection', function (socket) {
     socket.emit('point', points[i]);
   }
 
+  socket.on('IAMAROBOT', function () {
+    doodlebot = socket;
+    socket.emit('command',{
+      id: 'server',
+      command: 'marker',
+      args: ['down']
+    });
+    socket.emit('command',{
+      id: 'server',
+      command: 'go',
+      args: ['fwd',250]
+    });
+    point1 = [50,65];
+    point2 = [50,50];
+    points.push(point1);
+    socket.broadcast.emit('point',point1);
+    points.push(point2);
+    socket.broadcast.emit('point',point2);
+  });
+
   socket.on('command', function(cmd){
     console.log('command: ', cmd);
     socket.broadcast.emit('command', cmd);
@@ -31,5 +96,8 @@ io.on('connection', function (socket) {
     console.log('point: ', point);
     points.push(point);
     socket.broadcast.emit('point', point);
+    if (doodlebot) {
+      generatePathCommands(socket.id, points.slice(-3));
+    }
   })
 });
