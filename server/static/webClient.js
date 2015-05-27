@@ -46,14 +46,19 @@ function drawLine(start, finish) {
   ctx.closePath();  
 }
 
-function onMouseDown(event)
-{
+function onMouseDown(event) {
   console.log(event);
   var coordinate = getCoordinate([event.clientX, event.clientY-40]);
   points.push(coordinate);
   var line = points.slice(-2);
   drawLine(line[0],line[1]);
+  socket.emit('point',coordinate);
+}
 
+function onPoint(point) {
+  points.push(point);
+  var line = points.slice(-2);
+  drawLine(line[0],line[1]);
 }
 
 //init
@@ -72,6 +77,7 @@ $(function() {
         ctx.lineJoin="round";
         ctx.strokeStyle = "#2980b9";
         canvas.on("mousedown", onMouseDown);
+        socket.on("point", onPoint);
       }
     } 
   }
