@@ -10,7 +10,14 @@ controller.commands = {};
 
 controller.queueUpCommand = function (id, command, args) {
   var commandFunction = controller.commands[command];
-  if (!commandFunction) {return false;}
+  if (!commandFunction) {
+    console.log('received bad command', {
+      id: id,
+      command: command,
+      args: args
+    });
+    return false;
+  }
   controller.commandQueue.push({
     id: id,
     name: command,
@@ -22,8 +29,10 @@ controller.queueUpCommand = function (id, command, args) {
 };
 
 controller.processNextCommand = function () {
+  //console.log('processNextCommand',controller.commandQueue);
   var command = controller.commandQueue.shift();
   if (command) {
+    console.log('processing command:', command);
     controller.acting = true;
     var doAction = controller.commands[command.name].apply(this, command.args);
     doAction.then(function () {

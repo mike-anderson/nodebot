@@ -8,8 +8,9 @@ app.get('/', function(req, res){
   res.sendFile( __dirname + '/server/webClient.html');
 });
 
-http.listen(3000, function(){
-  console.log('listening on *:3000');
+app.set('port', process.env.PORT || 3000);
+http.listen(function(){
+  console.log('listening on *:',app.get('port'));
 });
 
 io.on('connection', function () {
