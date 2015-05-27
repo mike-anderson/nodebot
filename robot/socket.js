@@ -1,5 +1,8 @@
 exports.init = function (control) {
-	var socket = require('socket.io-client')('http://192.241.224.21');
+  var appServerAddress = process.env.SERVERADDR ? process.env.SERVERADDR : "http://192.241.224.21"
+	var socket = require('socket.io-client')(appServerAddress);
+
+  console.log('connecting to ' + appServerAddress);
 
 	socket.on('connect', function(){
 		control.queueUpCommand(0,'marker',['down']);
