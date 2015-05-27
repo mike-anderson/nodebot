@@ -45,8 +45,11 @@
  *                        .:.                                                                                                                                                     
  */
 
-var controls = require('./controls.js');
+var controls = require('./robot/controls.js');
+var socket = require('./robot/socket.js');
 
-/*controls.on('ready', function () {
+controls.on('ready', function () {
+	socket.init(controls);
+});
 
-});*/
+controls.init();
