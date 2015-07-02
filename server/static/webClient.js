@@ -123,7 +123,7 @@ function onCommandChanged () {
   var command = $('#command_name').val();
   if (command === 'GO') {
     $('#command_arg_opt_1').val('FWD').text('FWD');
-    $('#command_arg_opt_2').val('BWD').text('BWD');
+    $('#command_arg_opt_2').val('REV').text('REV');
     $('#command_value').attr('placeholder','for how long (in ms)?');
     $('#command_value').removeClass('hidden');
   } else if (command === 'TURN') {

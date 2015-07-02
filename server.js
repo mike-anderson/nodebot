@@ -86,7 +86,7 @@ io.on('connection', function (socket) {
       socket.broadcast.emit('ROBOTOFFLINE',{});
     });
 
-    socket.on('complete', function (id) {
+    socket.on('finishedCommand', function (id) {
         for (var i = 0; i < commands.length; i++) {
           if (commands[i].id === id) {
             commands = commands.splice(i, 1);
