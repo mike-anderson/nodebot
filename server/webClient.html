@@ -4,23 +4,78 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>nodebot</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/css/materialize.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="/static/webClient.css">
 </head>
 <body>
-	<h1>DoodleBot</h1>
-  <div class="row">
-    <div class="col-xs-12 col-sm-12 col-md-8 col-lg-6">
-      <canvas id="drawingCanvas"></canvas>
+
+ <div id="command_window">
+ <div class="row">
+  <h4 id="nodebot_status">DOODLEBOT is OFFLINE</h4>
+ </div>
+  
+ </div>
+
+ <div id="driver" class="">
+    <div class="row">
+      <div class="input-field col s4">
+        <select class="browser-default" id="command_name">
+          <option selected value="GO">GO</option>
+          <option value="TURN">TURN</option>
+          <option value="PEN">PEN</option>
+        </select>
+        <!--<label>Command</label>-->
+      </div>
+      <div class="input-field col s4">
+        <select class="browser-default" id="command_arg">
+          <option selected id="command_arg_opt_1" value="FWD">FWD</option>
+          <option id="command_arg_opt_2" value="BWD">BWD</option>
+        </select>
+        <!--<label>argument</label>-->
+      </div>
+      <div class="input-field col s4">
+          <input placeholder="for how long (in ms)" id="command_value" type="text">
+      </div>
+    </div>
+    <div class="row">
+      <a id="command_submit" class="waves-effect waves-light btn">send command to doodlebot</a>
+    </div>
+ </div>
+
+  <!-- modals and dynamic components -->
+  <div id="modal1" class="modal">
+    <div class="modal-content">
+      <h4>What's Your Name?</h4>
+      <p>Please enter a screen name so doodlebot knows who is giving the commands.</p>
+      <div class="row">
+        <div class="col s12 input-field">
+          <input id="screen-name-form" type="text" class="validate" required="required">
+          <label for="name">Name</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <a href="#!" id='screen-name-form-submit' class=" modal-action modal-close waves-effect waves-green btn disabled">Lets Go!</a>
     </div>
   </div>
-  <div class="row">
-    <div class="col-xs-12 col-sm-12 col-md-8 col-lg-6">
-      Mike Anderson 2015 (mike0x41)
-    </div>
-  </div>
+
+  <!-- le javascript -->
 	<script src="/socket.io/socket.io.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/3.0.3/handlebars.js"></script>
   <script src="/static/webClient.js"></script>
+
+  <!-- handlebars templates -->
+  <script id="command_card" type="text/x-handlebars-template">
+    <div class="row" id="{{ id }}">
+      <div class="col s12">
+        <div class="card-panel">
+          <span class="robot-command">{{ command }}</span>
+        </div>
+      </div>
+    </div>
+  </script>
 </body>
 </html>

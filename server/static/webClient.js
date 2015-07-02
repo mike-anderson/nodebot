@@ -1,72 +1,149 @@
 var socket = io();
-var canvas, ctx;
-var points = [];
-
-
-/**
- * return a normalized cooridnate system regardless of view size
- * @param  {Number[]} position
- * @return {Object} coordinates
- */
-function getCoordinate(position) {
-  return [
-    position[0]/canvas.width()*100,
-    position[1]/canvas.height()*130
-  ]
-}
-
-function getPosition(coordinate) {
-  return [
-    coordinate[0]/100*canvas.width(),
-    coordinate[1]/130*canvas.height()
-  ] 
-}
-
-function drawLine(start, finish) {
-  var startPos = getPosition(start);
-  var finishPos = getPosition(finish);
-  console.log(startPos,finishPos);
-  ctx.beginPath();
-  ctx.moveTo(startPos[0],startPos[1]);
-  ctx.lineTo(finishPos[0],finishPos[1]);
-  ctx.stroke();
-  ctx.closePath();  
-}
-
-function onMouseDown(event) {
-  if (points.length >= 2) {
-    var coordinate = getCoordinate([event.clientX, event.clientY-40]);
-    points.push(coordinate);
-    var line = points.slice(-2);
-    drawLine(line[0],line[1]);
-    socket.emit('point',coordinate);
-  }
-}
-
-function onPoint(point) {
-  points.push(point);
-  var line = points.slice(-2);
-  drawLine(line[0],line[1]);
-}
+var clientName = 'DoodleBotCommander';
+var commandCardTemplate = null;
 
 //init
 $(function() {
-  canvas = $('#drawingCanvas');
 
-  if (canvas) {
-    canvas.height(canvas.width()*1.3);
-    if (canvas.get(0).getContext) {
-      ctx = canvas.get(0).getContext("2d");
-      if (ctx) {
-        ctx.canvas.width = canvas.width();
-        ctx.canvas.height = canvas.height();
-        ctx.lineWidth = 2;
-        ctx.lineCap="round";
-        ctx.lineJoin="round";
-        ctx.strokeStyle = "#2980b9";
-        canvas.on("mousedown", onMouseDown);
-        socket.on("point", onPoint);
-      }
-    } 
-  }
+  //set up templates
+  commandCardTemplate = Handlebars.compile($('#command_card').html());
+
+  //set up UI Listeners
+  $('#command_name').change(onCommandChanged);
+  $('#command_submit').click(onCommandSubmit);
+
+  //set up socket listeners
+  socket.on('command',onCommandMessageRecieved);
+  socket.on('complete',onCommandMessageCompletionRecieved);
+  socket.on('IAMAROBOT',onNodebotOnline);
+  socket.on('ROBOTOFFLINE',onNodebotOffline);
+
+  //get going
+  createAskNameModal();
 });
+
+function onNodebotOnline () {
+  $('#nodebot_status').text('DOODLEBOT is ONLINE');
+};
+
+function onNodebotOffline () {
+  $('#nodebot_status').text('DOODLEBOT is OFFLINE');
+}
+
+function createAskNameModal () {
+     $('#screen-name-form').keyup(function (e) {
+    var text = $(this).val();
+    if (text && text !== '') {
+      $('#screen-name-form-submit').removeClass('disabled');
+    } else {
+      $('#screen-name-form-submit').addClass('disabled');
+    }
+   });
+   $('#modal1').openModal({
+      dismissible: false, // Modal can be dismissed by clicking outside of the modal
+      complete: function() {
+        var name = $('#screen-name-form').val();
+        if (name && name !== '') { 
+          clientName = name;
+        } else {
+          console.log('oh no!');
+        }
+      }
+    });  
+}
+
+function onCommandMessageRecieved (message) {
+  var commandText;
+  var id = message.id;
+  if (message.command === 'marker') {
+    commandText = 'PEN ' + message.args[0].toUpperCase();
+  }
+  else if (message.command === 'go') {
+    commandText = 'GO ' + message.args[0].toUpperCase() + ' ' + message.args[1].toString();
+  }
+  else if (message.command === 'turn') {
+    var arg = message.args[0] > 0 ? 'CW' : 'CCW';
+    var degrees = message.args[0] > 0 ? message.args[0].toString() : (0-message.args[0]).toString();
+    commandText = 'TURN ' + arg + ' ' + degrees;
+  }
+  $('#command_window').append(commandCardTemplate({command:commandText,id:id}));
+}
+
+function onCommandMessageCompletionRecieved (id) {
+  var commandCard = $('#'+id);
+  if (commandCard.length > 0) {
+    commandCard.remove();
+  }
+}
+
+function onCommandSubmit () {
+  var commandName = $('#command_name').val();
+  var message = {
+    id: guid()
+  };
+
+  switch (commandName) {
+    case 'GO':
+      if ($('#command_value').val() === '') {
+        alert('you need to specify a time for doodlebot to go for');
+        return;
+      }
+      message.command = 'go';
+      message.args = [
+        $('#command_arg').val().toLowerCase(),
+        parseInt($('#command_value').val())
+      ];
+      break;
+    case 'TURN':
+      if ($('#command_value').val() === '') {
+        alert('you need to specify a number of degrees for doodlebot to turn');
+        return;
+      }  
+      message.command = 'turn';
+      message.args = [
+        parseInt($('#command_value').val())  
+      ]
+      if ($('#command_arg').val() === 'CCW') {
+        message.args[0] = 0 - message.args[0];
+      }
+      break;
+    case 'PEN':
+      message.command = 'marker';
+      message.args = [
+        $('#command_arg').val().toLowerCase()
+      ];
+      break;
+  }
+  $('#command_value').val('');
+  $('#command_name').val('GO').change();
+  socket.emit('command',message);
+}
+
+function onCommandChanged () {
+  var command = $('#command_name').val();
+  if (command === 'GO') {
+    $('#command_arg_opt_1').val('FWD').text('FWD');
+    $('#command_arg_opt_2').val('BWD').text('BWD');
+    $('#command_value').attr('placeholder','for how long (in ms)?');
+    $('#command_value').removeClass('hidden');
+  } else if (command === 'TURN') {
+    $('#command_arg_opt_1').val('CW').text('CW');
+    $('#command_arg_opt_2').val('CCW').text('CCW');
+     $('#command_value').attr('placeholder','for how many degrees?');
+    $('#command_value').removeClass('hidden');
+  } else if (command === 'PEN') {
+    $('#command_arg_opt_1').val('UP').text('UP');
+    $('#command_arg_opt_2').val('DOWN').text('DOWN');
+    $('#command_value').addClass('hidden');
+  }
+}
+
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+  }
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+    s4() + '-' + s4() + s4() + s4();
+}

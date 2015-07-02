@@ -16,6 +16,6 @@ exports.init = function (control) {
 		control.queueUpCommand(1,'marker',['up']);
 	});
 	control.on('finishedCommand', function (id) {
-		socket.emit('finishedCommand', id);
+		socket.emit('complete', id);
 	})
 };

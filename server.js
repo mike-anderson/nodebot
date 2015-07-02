@@ -4,6 +4,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
 var points = [];
+var commands = [];
 var doodlebot;
 
  /*
@@ -63,8 +64,8 @@ http.listen(app.get('port'), function(){
 io.on('connection', function (socket) {
   console.log('connected');
 
-  for (var i = 0; i < points.length; i++) {
-    socket.emit('point', points[i]);
+  for (var i = 0; i < commands.length; i++) {
+    socket.emit('command', commands[i]);
   }
 
   socket.on('IAMAROBOT', function () {
@@ -79,17 +80,28 @@ io.on('connection', function (socket) {
       command: 'go',
       args: ['fwd',250]
     });
-    point1 = [50,65];
-    point2 = [50,50];
-    points.push(point1);
-    socket.broadcast.emit('point',point1);
-    points.push(point2);
-    socket.broadcast.emit('point',point2);
+
+    socket.broadcast.emit('IAMAROBOT',{});
+    socket.on('disconnect', function () {
+      socket.broadcast.emit('ROBOTOFFLINE',{});
+    });
+
+    socket.on('complete', function (id) {
+        for (var i = 0; i < commands.length; i++) {
+          if (commands[i].id === id) {
+            commands = commands.splice(i, 1);
+            break;
+          }
+        }
+        socket.broadcast.emit('complete',id);
+    })
+
   });
 
   socket.on('command', function(cmd){
     console.log('command: ', cmd);
-    socket.broadcast.emit('command', cmd);
+    commands.push(cmd);
+    io.sockets.emit('command', cmd);
   });
 
   socket.on('point', function(point) {
@@ -99,5 +111,5 @@ io.on('connection', function (socket) {
     if (doodlebot) {
       generatePathCommands(socket.id, points.slice(-3));
     }
-  })
+  });
 });
